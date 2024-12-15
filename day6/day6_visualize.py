@@ -1,7 +1,28 @@
+import renderer
+from PIL import Image
 grid = [list(line.removesuffix("\n")) for line in open("input.txt").readlines()]
+def renderGrid(grid, output_name):
+    grid_image = Image.new("RGBA", (len(grid[0]), len(grid)))
+    for y, row in enumerate(grid):
+        for x, point in enumerate(row):
+            if point == "#":
+                grid_image.putpixel((x, y), (226, 88, 79, 255))
+            elif point == "^":
+                grid_image.putpixel((x, y), (255, 212, 187, 255))
+            elif point == "!":
+                grid_image.putpixel((x,y), (255, 0, 0, 255))
+            elif point == "@":
+                grid_image.putpixel((x,y), (255, 255, 255, 255))
+            else:
+                grid_image.putpixel((x,y), (123, 205, 237, 255))
+    grid_image.save(f"frames/{output_name}.png")
+    renderer.renderFrame(f"frames/{output_name}.png")
+    return grid_image
 
 def inBounds(x, y):
     return (0 <= x < len(grid[0])) and (0 <= y < len(grid))
+
+grid_image = renderGrid(grid, "grid")
 def part_1(grid, output_result=False):
     grid_temp = [line.copy() for line in grid]
     # x is first component, y is second component, +x is right, +y is down
