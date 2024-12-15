@@ -23,73 +23,59 @@ def inBounds(x, y):
     return (0 <= x < len(grid[0])) and (0 <= y < len(grid))
 
 grid_image = renderGrid(grid, "grid")
-def part_1():
+def part_1(grid, output_result=False):
     grid_temp = [line.copy() for line in grid]
     # x is first component, y is second component, +x is right, +y is down
     directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
     direction_index = 3  # directions[direction_index] represents the current direction of travel
     position = [(i, j) for j in range(len(grid)) for i in range(len(grid[0])) if grid[j][i] == "^"][0]
     direction = directions[direction_index]
-    while inBounds(position[0], position[1]):
+    numberOfObstructions = sum([line.count("#") for line in grid])
+    numberOfCollisions = 0 # For part 2
+    while inBounds(position[0], position[1]) and numberOfCollisions <= numberOfObstructions:
         grid_temp[position[1]][position[0]] = "X"
         new_position = (position[0] + direction[0], position[1] + direction[1])
         if inBounds(new_position[0], new_position[1]) and grid[new_position[1]][new_position[0]] == '#':
+            numberOfCollisions += 1
             direction_index = (direction_index + 1) % 4  # Corresponds to a turn to the right
             direction = directions[direction_index]
         else:
             position = new_position
-    print(sum([line.count("X") for line in grid_temp]))
+    if output_result:
+        print(sum([line.count("X") for line in grid_temp]))
+    return inBounds(position[0], position[1])
 def part_2():
     # x is first component, y is second component, +x is right, +y is down
     directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
     direction_index = 3  # directions[direction_index] represents the current direction of travel
     position = [(i, j) for j in range(len(grid)) for i in range(len(grid[0])) if grid[j][i] == "^"][0]
-    og_position = position
     direction = directions[direction_index]
     numberOfObstructions = sum([line.count("#") for line in grid])
-    validPositions = []
+    potential_positions = []
+    result = 0
     while inBounds(position[0], position[1]):
-        grid[position[1]][position[0]] = "^"
         pretend_direction_index = (direction_index + 1) % 4
         pretend_direction = directions[pretend_direction_index]
         # Check if there is an obstruction directly to the right of us.
         hasObstruction = any([grid[position[1] + (i * pretend_direction[1])][position[0] + (i * pretend_direction[0])] == "#"
                           for i in range(max([len(grid), len(grid[0])]))
                           if inBounds(position[0] + (i * pretend_direction[0]), position[1] + (i * pretend_direction[1]))])
-        # If there is an obstruction to the right of us, pretend there is an obstruction right in front of us and see what happens
-        if hasObstruction:
-            # While we are pretending that there is an obstruction right in front of us, count the number of collisions.
-            # If it is greater than the number of obstructions on the grid, we stop because we can be certain that we are in a loop.
-            numberOfCollisions = 0
-            pretend_direction_index = direction_index
-            pretend_direction = directions[pretend_direction_index]
-            pretend_position = position
-            pretend_grid = [line.copy() for line in grid]
-            if inBounds(position[0] + direction[0], position[1] + direction[1]):
-                pretend_grid[position[1] + direction[1]][position[0] + direction[0]] = "#"
-                while inBounds(pretend_position[0], pretend_position[1]) and (numberOfCollisions <= numberOfObstructions):
-                    pretend_grid[pretend_position[1]][pretend_position[0]] = "^"
-                    new_pretend_position = (pretend_position[0] + pretend_direction[0], pretend_position[1] + pretend_direction[1])
-                    if inBounds(new_pretend_position[0], new_pretend_position[1]) and pretend_grid[new_pretend_position[1]][new_pretend_position[0]] == "#":
-                        pretend_direction_index = (pretend_direction_index + 1) % 4
-                        pretend_direction = directions[pretend_direction_index]
-                        numberOfCollisions += 1
-                    else:
-                        pretend_position = new_pretend_position
-                if inBounds(pretend_position[0], pretend_position[1]):
-                    # We have found a valid position for our obstruction. Now, add one to our answer
-                    validPositions.append((position[0] + direction[0], position[1] + direction[1]))
-                    pretend_grid[position[1] + direction[1]][position[0] + direction[0]] = "!"
-                    pretend_grid[og_position[1]][og_position[0]] = "@"
-                    renderGrid(pretend_grid, str(len(validPositions)))
-
         new_position = (position[0] + direction[0], position[1] + direction[1])
+        # We will create a list of potential positions
         if inBounds(new_position[0], new_position[1]) and grid[new_position[1]][new_position[0]] == '#':
             direction_index = (direction_index + 1) % 4  # Corresponds to a turn to the right
             direction = directions[direction_index]
         else:
+            if inBounds(new_position[0], new_position[1]) and hasObstruction:
+                potential_positions.append(new_position)
             position = new_position
-    print(len(set(validPositions)))
+    potential_positions = list(set(potential_positions))
+    for potential_position in potential_positions:
+        pretend_grid = [line.copy() for line in grid]
+        pretend_grid[potential_position[1]][potential_position[0]] = "#"
+        if part_1(pretend_grid):
+            result += 1
+    print(result)
 
-part_1()
+part_1(grid, output_result=True)
 part_2()
